@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>Workspace Dashboard</h2>
+        <p class="text-muted">Manage your projects and track task statuses.</p>
+    </div>
+</div>
+
+{% if session.get('role') == 'Admin' %}
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">Create New Project</div>
+            <div class="card-body">
+                <form action="{{ url_for('create_project') }}" method="POST">
+                    <div class="input-group">
+                        <input type="text" name="name" class="form-control" placeholder="Project Name" required>
+                        <button class="btn btn-outline-secondary" type="submit">Create</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">Assign New Task</div>
+            <div class="card-body">
+                <form action="{{ url_for('create_task') }}" method="POST">
+                    <div class="mb-2">
+                        <input type="text" name="title" class="form-control" placeholder="Task Description" required>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-md-5">
+                            <select name="project_id" class="form-select" required>
+                                <option value="" disabled selected>Select Project...</option>
+                                {% for project in projects %}
+                                    <option value="{{ project.id }}">{{ project.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-5">
+                            <select name="user_id" class="form-select" required>
+                                <option value="" disabled selected>Assign to...</option>
+                                {% for user in users %}
+                                    <option value="{{ user.id }}">{{ user.username }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-primary w-100" type="submit">Add</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="card">
+    <div class="card-header bg-dark text-white">Task Tracker</div>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Description</th>
+                    <th>Project</th>
+                    <th>Assigned To</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for task in tasks %}
+                <tr>
+                    <td>#{{ task.id }}</td>
+                    <td>{{ task.title }}</td>
+                    <td>{{ task.project.name }}</td>
+                    <td>{{ task.assignee.username }}</td>
+                    <td>
+                        <!-- UPDATED: Added Overdue badge color -->
+                        <span class="badge {% if task.status == 'Pending' %}bg-warning{% elif task.status == 'In Progress' %}bg-info{% elif task.status == 'Overdue' %}bg-danger{% else %}bg-success{% endif %}">
+                            {{ task.status }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if session.get('role') == 'Admin' or task.user_id == session.get('user_id') %}
+                        <!-- UPDATED: Added Overdue to the dropdown list -->
+                        <form action="{{ url_for('update_task', task_id=task.id) }}" method="POST" class="d-flex">
+                            <select name="status" class="form-select form-select-sm me-2" style="width: auto;">
+                                <option value="Pending" {% if task.status == 'Pending' %}selected{% endif %}>Pending</option>
+                                <option value="In Progress" {% if task.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                                <option value="Overdue" {% if task.status == 'Overdue' %}selected{% endif %}>Overdue</option>
+                                <option value="Done" {% if task.status == 'Done' %}selected{% endif %}>Done</option>
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-outline-dark">Update</button>
+                        </form>
+                        {% else %}
+                        <span class="text-muted small">No access</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-muted">No tasks available.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
